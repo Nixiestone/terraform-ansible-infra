@@ -1,0 +1,38 @@
+---
+- name: Clone the repository
+  become: true
+  git:
+    repo: "https://github.com/Nixiestone/DevOps-Stage-4"
+    dest: /home/ubuntu/todo-app
+    version: main
+    force: yes
+- name: Ensure letsencrypt directory exists
+  file:
+    path: /home/ubuntu/todo-app/letsencrypt
+    state: directory
+    mode: '0755'
+    owner: ubuntu
+    group: ubuntu    
+
+- name: Set correct permissions for acme.json
+  become: true
+  file:
+    path: /home/ubuntu/todo-app/letsencrypt/acme.json
+    state: touch
+    mode: '0600'
+
+- name: setup ssl cert
+  become: true
+  shell: |
+    curl "https://www.duckdns.org/update?domains=nixiemicroservices.duckdns.org&token=bed95a38-9e55-40dc-9b9a-0decce88ce80&ip={{ ansible_host }}"
+    
+- name: Create docker network
+  become: true
+  shell: |
+    docker network create app-network
+
+- name: Run Docker Compose
+  become: true
+  command:
+    cmd: docker compose up -d
+    chdir: /home/ubuntu/todo-app
